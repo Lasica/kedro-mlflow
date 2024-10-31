@@ -9,22 +9,9 @@ from kedro.pipeline import Pipeline
 from kedro.runner import AbstractRunner, SequentialRunner
 from kedro.utils import load_obj
 from kedro_datasets.pickle import PickleDataset
-from mlflow.pyfunc import PythonModel
+from mlflow.pyfunc.model import PythonModel
 
-from typing import Any
 from kedro_mlflow.pipeline.pipeline_ml import PipelineML
-from kedro.framework.context import KedroContext
-from unittest.mock import MagicMock
-
-class KedroMockContext(KedroContext):
-    @property
-    def catalog(self):
-        return self.catalog
-
-    @property
-    def params(self) -> dict[str, Any]:
-        return {}
-
 
 class KedroPipelineModel(PythonModel):
     def __init__(
@@ -95,7 +82,8 @@ class KedroPipelineModel(PythonModel):
         # TODO: we need to use the runner's default dataset in case of multithreading
         self.loaded_catalog = DataCatalog(
             datasets={
-                name: MemoryDataset(copy_mode=copy_mode, metadata=(catalog._datasets[name].metadata if name in catalog._datasets else None))
+                name: MemoryDataset(copy_mode=copy_mode,
+                                    metadata=(catalog._datasets[name].metadata if name in catalog._datasets else None))
                 for name, copy_mode in self.copy_mode.items()
             }
         )
@@ -142,7 +130,6 @@ class KedroPipelineModel(PythonModel):
                 # extra uneccessary dependencies: this dataset will be replaced at
                 # inference time and we do not need to know the original type, see
                 # https://github.com/Galileo-Galilei/kedro-mlflow/issues/273
-
                 sub_catalog.add(dataset_name=dataset_name, dataset=MemoryDataset())
             else:
                 try:
@@ -207,7 +194,7 @@ class KedroPipelineModel(PythonModel):
         # but we rely on a mlflow function for saving, and it is unaware of kedro
         # pipeline structure
         mlflow_artifacts_keys = set(context.artifacts.keys())
-        kedro_artifacts_keys = set((self.pipeline.inputs() - {self.input_name}))#| {f"hook_{hookclass.__class__.__name__}" for hookclass in self.hooks})
+        kedro_artifacts_keys = set((self.pipeline.inputs() - {self.input_name}))
         if mlflow_artifacts_keys != kedro_artifacts_keys:
             in_artifacts_but_not_inference = (
                 mlflow_artifacts_keys - kedro_artifacts_keys
@@ -297,6 +284,8 @@ class KedroPipelineModel(PythonModel):
         for hook in self.hooks:
             hook_manager.register(hook())
         return hook_manager
+        # TODO: decide what to do about catalog_created and context_created
+        # whether to mock up or placehold missing values or skip the hook calls
         # hook_manager.hook.after_catalog_created(
         #     catalog = self.loaded_catalog,
         #     conf_catalog = {},
