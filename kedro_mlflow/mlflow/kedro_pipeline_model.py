@@ -13,6 +13,7 @@ from mlflow.pyfunc.model import PythonModel
 
 from kedro_mlflow.pipeline.pipeline_ml import PipelineML
 
+
 class KedroPipelineModel(PythonModel):
     def __init__(
         self,
@@ -21,7 +22,7 @@ class KedroPipelineModel(PythonModel):
         input_name: str,
         runner: Optional[AbstractRunner] = None,
         copy_mode: Optional[Union[dict[str, str], str]] = "assign",
-        hooks: Optional[list] = None
+        hooks: Optional[list] = None,
     ):
         """[summary]
 
@@ -82,8 +83,14 @@ class KedroPipelineModel(PythonModel):
         # TODO: we need to use the runner's default dataset in case of multithreading
         self.loaded_catalog = DataCatalog(
             datasets={
-                name: MemoryDataset(copy_mode=copy_mode,
-                                    metadata=(catalog._datasets[name].metadata if name in catalog._datasets else None))
+                name: MemoryDataset(
+                    copy_mode=copy_mode,
+                    metadata=(
+                        catalog._datasets[name].metadata
+                        if name in catalog._datasets
+                        else None
+                    ),
+                )
                 for name, copy_mode in self.copy_mode.items()
             }
         )
@@ -268,7 +275,7 @@ class KedroPipelineModel(PythonModel):
 
         hook_manager.hook.after_pipeline_run(
             run_params=self.run_params,
-            run_result = run_output,
+            run_result=run_output,
             pipeline=self.pipeline,
             catalog=self.loaded_catalog,
         )
@@ -293,7 +300,7 @@ class KedroPipelineModel(PythonModel):
         #     feed_dict = {},
         #     save_version = "",
         #     load_versions = {},
-        # ) 
+        # )
 
         # hook_manager.hook.after_context_created(
         #     KedroMockContext(
@@ -305,6 +312,7 @@ class KedroPipelineModel(PythonModel):
         #         None
         #     )
         # )
+
 
 class KedroPipelineModelError(Exception):
     """Error raised when the KedroPipelineModel construction fails"""
