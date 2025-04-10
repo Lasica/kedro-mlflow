@@ -444,7 +444,9 @@ class MlflowHook:
                     f"The run '{mlflow.active_run().info.run_id}' was already opened before launching 'kedro run' so it is not closed. You should close it manually."
                 )
             else:
-                mlflow.end_run()
+                # we opened a run for each node, so we must close them all
+                while mlflow.active_run() is not None:
+                    mlflow.end_run()
 
         else:
             switch_catalog_logging(catalog, True)
