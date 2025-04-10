@@ -221,8 +221,6 @@ class KedroPipelineModel(PythonModel):
             self.loaded_catalog.save(name=name, data=updated_catalog.load(name))
 
     def predict(self, context, model_input, params=None):
-        # we create an empty hook manager but do NOT register hooks
-        # because we want this model be executable outside of a kedro project
         hook_manager = self._init_hooks()
 
         # params can pass
@@ -246,9 +244,6 @@ class KedroPipelineModel(PythonModel):
                 runner_class, "kedro.runner"
             )()  # do not forget to instantiate the class with ending ()
         )
-
-        hook_manager = _create_hook_manager()
-        # _register_hooks(hook_manager, predict_params.hooks)
 
         for name, value in params.items():
             # no need to check if params are in the catalog, because mlflow already checks that the params matching the signature
