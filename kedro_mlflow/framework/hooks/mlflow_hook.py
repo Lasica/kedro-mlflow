@@ -445,7 +445,7 @@ class MlflowHook:
                 )
             else:
                 # we opened a run for each node, so we must close them all
-                while mlflow.active_run() is not None:
+                while mlflow.active_run():
                     mlflow.end_run()
 
         else:
