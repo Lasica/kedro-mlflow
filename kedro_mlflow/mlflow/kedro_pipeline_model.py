@@ -4,14 +4,25 @@ from typing import Optional, Union
 
 from kedro.framework.hooks import _create_hook_manager
 from kedro import __version__
-from kedro.io import DataCatalog, MemoryDataset
+from kedro.io import DataCatalog, MemoryDataset, CatalogProtocol
 from kedro.pipeline import Pipeline
 from kedro.runner import AbstractRunner, SequentialRunner
 from kedro.utils import load_obj
 from kedro_datasets.pickle import PickleDataset
 from mlflow.pyfunc.model import PythonModel
-
+from kedro.framework.context import KedroContext
 from kedro_mlflow.pipeline.pipeline_ml import PipelineML
+from unittest.mock import MagicMock
+from typing import Any
+
+class KedroMockContext(KedroContext):
+    @property
+    def catalog(self) -> CatalogProtocol:
+        return self.catalog
+
+    @property
+    def params(self) -> dict[str, Any]:
+        return {}
 
 
 class KedroPipelineModel(PythonModel):
@@ -285,7 +296,6 @@ class KedroPipelineModel(PythonModel):
         hook_manager = _create_hook_manager()
         for hook in self.hooks:
             hook_manager.register(hook())
-        return hook_manager
         # TODO: decide what to do about catalog_created and context_created
         # whether to mock up or placehold missing values or skip the hook calls
         # hook_manager.hook.after_catalog_created(
@@ -297,16 +307,19 @@ class KedroPipelineModel(PythonModel):
         #     load_versions = {},
         # )
 
-        # hook_manager.hook.after_context_created(
-        #     KedroMockContext(
-        #         "./",
-        #         MagicMock(),
-        #         "serving",
-        #         "",
-        #         hook_manager,
-        #         None
-        #     )
-        # )
+        hook_manager.hook.after_context_created(
+            context=KedroMockContext(
+                "./",
+                MagicMock(),
+                "serving",
+                "",
+                hook_manager,
+                None
+            )
+        )
+        return hook_manager
+
+
 
 
 class KedroPipelineModelError(Exception):
